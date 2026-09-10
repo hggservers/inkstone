@@ -8,6 +8,25 @@ import { t } from '../../lib/i18n'
 import { Preview } from './Preview'
 
 describe('preview task interaction', () => {
+  it('reports the committed preview HTML for export after rendering', async () => {
+    const onHtmlReady = vi.fn()
+    const container = document.createElement('div')
+    document.body.append(container)
+    const root = createRoot(container)
+
+    try {
+      await act(async () => {
+        root.render(createElement(Preview, { content: '# Exportable', onHtmlReady }))
+      })
+
+      expect(onHtmlReady).toHaveBeenCalledWith(expect.stringContaining('<h1'))
+      expect(onHtmlReady).toHaveBeenCalledWith(expect.stringContaining('Exportable'))
+    } finally {
+      await act(async () => root.unmount())
+      container.remove()
+    }
+  })
+
   it('writes the browser-toggled checkbox state back to the exact source line', async () => {
     const previousNotes = useNotes.getState()
     const previousUi = useUi.getState()
@@ -154,21 +173,21 @@ describe('preview task interaction', () => {
       const copy = container.querySelector<HTMLButtonElement>('[data-copy]')!
       expect(copy).not.toBeNull()
 
-      vi.useFakeTimers()
       await act(async () => copy.click())
+      await act(async () => Promise.resolve())
       expect(writeText).toHaveBeenCalledWith('copy me\n')
       expect(copy.textContent).toBe(t('common.copied'))
 
-      await act(async () => vi.advanceTimersByTime(500))
+      await act(async () => delay(500))
       await act(async () => copy.click())
-      await act(async () => vi.advanceTimersByTime(500))
+      await act(async () => Promise.resolve())
+      await act(async () => delay(500))
       expect(copy.textContent).toBe(t('common.copied'))
 
-      await act(async () => vi.advanceTimersByTime(400))
-      expect(copy.textContent).toBe(t('common.copy'))
+      await act(async () => delay(450))
+      expect(copy.textContent).toBe(t('common.copied'))
     } finally {
       await act(async () => root.unmount())
-      vi.useRealTimers()
       container.remove()
       if (clipboardDescriptor) Object.defineProperty(navigator, 'clipboard', clipboardDescriptor)
       else Reflect.deleteProperty(navigator, 'clipboard')
@@ -182,4 +201,8 @@ function deferred<T>() {
     resolve = done
   })
   return { promise, resolve }
+}
+
+function delay(ms: number) {
+  return new Promise((resolve) => window.setTimeout(resolve, ms))
 }

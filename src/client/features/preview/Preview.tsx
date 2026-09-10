@@ -30,6 +30,7 @@ import { moveMarkdownTabFocus, selectMarkdownTab } from './markdown-tabs'
 export interface PreviewProps {
   content: string
   onHeadings?: (headings: Heading[]) => void
+  onHtmlReady?: (html: string) => void
   scrollerRef?: RefObject<HTMLDivElement | null>
   onRendered?: () => void
   className?: string
@@ -38,6 +39,7 @@ export interface PreviewProps {
 export function Preview({
   content,
   onHeadings,
+  onHtmlReady,
   scrollerRef: externalScrollerRef,
   onRendered,
   className,
@@ -187,8 +189,9 @@ export function Preview({
     const scroller = scrollerRef.current
     const host = hostRef.current
     if (snapshot && scroller && host) restorePreviewViewport(scroller, host, snapshot)
+    onHtmlReady?.(committedHtml)
     onRendered?.()
-  }, [committedHtml, onRendered, scrollerRef])
+  }, [committedHtml, onHtmlReady, onRendered, scrollerRef])
 
 
   const onClick = (event: React.MouseEvent) => {

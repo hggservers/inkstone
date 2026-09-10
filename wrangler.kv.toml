@@ -2,18 +2,25 @@ name = "inkstone"
 main = "src/worker/index.ts"
 compatibility_date = "2026-05-01"
 compatibility_flags = ["nodejs_compat", "global_fetch_strictly_public"]
+workers_dev = true
 
 [assets]
 directory = "./dist/client"
 binding = "ASSETS"
 not_found_handling = "single-page-application"
 
+[[routes]]
+pattern = "note.zhouhua.net"
+custom_domain = true
+
 [[d1_databases]]
 binding = "DB"
 database_name = "inkstone-db"
+database_id = "f820638b-c165-4dcb-9ce7-ed51d98aba1e"
 
 [[kv_namespaces]]
 binding = "FILES_KV"
+id = "5f99a82a90aa4707a0a802ec5b98de1b"
 
 [[durable_objects.bindings]]
 name = "SYNC_HUB"

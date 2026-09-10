@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { EditorView } from '@codemirror/view';
-import { ArrowLeft, Columns2, Eye, History, Link as LinkIcon, ListTree, MoreHorizontal, PanelRightClose, Pencil, Plus, Share2, Star, } from 'lucide-react';
+import { ArrowLeft, Columns2, Eye, FileCode2, FileText, History, Link as LinkIcon, ListTree, MoreHorizontal, PanelRightClose, Pencil, Plus, Printer, Share2, Star, } from 'lucide-react';
 import { cn } from '../../lib/cn';
 import { api } from '../../lib/api';
 import { readingMinutes } from '@shared/markdown-utils';
@@ -20,7 +20,9 @@ import { SplitResizer } from '../shell/Resizer';
 import { EditorToolbar } from './EditorToolbar';
 import { BacklinksPanel } from './BacklinksPanel';
 import { SaveIndicator } from '../shell/SaveIndicator';
-import type { Heading } from '../../lib/markdown/renderer';
+import { renderMarkdown, type Heading } from '../../lib/markdown/renderer';
+import { downloadNoteHtml, downloadNoteMarkdown, printNoteAsPdf, type ExportTheme } from '../../lib/export/note-export';
+import { ExportMenu } from './ExportMenu';
 import { useUi } from '../../store/ui';
 import { useSession } from '../../store/session';
 import { useActiveNote, useNotes } from '../../store/notes';
@@ -56,6 +58,7 @@ export function Workspace({ mobileLayout = 'edit', onMobileBack, }: {
     const moreButtonRef = useRef<HTMLButtonElement>(null);
     const [view, setView] = useState<EditorView | null>(null);
     const [headings, setHeadings] = useState<Heading[]>([]);
+    const [previewHtml, setPreviewHtml] = useState('');
     const [moreMenuOpen, setMoreMenuOpen] = useState(false);
     const [mobileOutlineOpen, setMobileOutlineOpen] = useState(false);
     const [containerWidth, setContainerWidth] = useState(0);
@@ -80,9 +83,28 @@ export function Workspace({ mobileLayout = 'edit', onMobileBack, }: {
             : `calc((100% + ${PREVIEW_BORDER_WIDTH + defaultOutlineWidth - SPLIT_HANDLE_WIDTH}px) / 2)`
         : `${(1 - splitRatio) * 100}%`;
     const updatedTime = useRelativeTime(note?.updatedAt ?? 0, Boolean(note));
+    const exportTheme = (document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light') as ExportTheme;
+    const exportHtml = useMemo(() => previewHtml || renderMarkdown(content).html, [content, previewHtml]);
+    const runExport = useCallback((task: () => void) => {
+        try {
+            task();
+        }
+        catch (error) {
+            toast({
+                title: t("workspace.export_failed"),
+                description: error instanceof Error && error.message === 'print_window_blocked'
+                    ? t("workspace.print_window_blocked")
+                    : error instanceof Error
+                        ? error.message
+                        : String(error),
+                tone: 'danger',
+            });
+        }
+    }, [toast]);
     useLayoutEffect(() => {
         setHeadings([]);
         setMobileOutlineOpen(false);
+        setPreviewHtml('');
     }, [note?.id, showPreview]);
     useLayoutEffect(() => {
         const container = containerRef.current;
@@ -185,6 +207,24 @@ export function Workspace({ mobileLayout = 'edit', onMobileBack, }: {
             icon: <Share2 size={13}/>,
             onSelect: () => openPanel('share'),
         },
+        {
+            id: 'export-markdown',
+            label: t("workspace.export_markdown"),
+            icon: <FileText size={13}/>,
+            onSelect: () => runExport(() => downloadNoteMarkdown(note, content)),
+        },
+        {
+            id: 'export-html',
+            label: t("workspace.export_html"),
+            icon: <FileCode2 size={13}/>,
+            onSelect: () => runExport(() => downloadNoteHtml(note, exportHtml, exportTheme)),
+        },
+        {
+            id: 'export-pdf',
+            label: t("workspace.print_save_pdf"),
+            icon: <Printer size={13}/>,
+            onSelect: () => runExport(() => printNoteAsPdf(note, exportHtml, exportTheme)),
+        },
     ];
     return (<div className="flex h-full min-h-0 flex-col bg-[var(--bg-editor)]">
       <header className="flex h-11 shrink-0 items-center gap-2 border-b border-[var(--border-subtle)] px-3">
@@ -239,6 +279,7 @@ export function Workspace({ mobileLayout = 'edit', onMobileBack, }: {
                 <Share2 size={14}/>
               </IconButton>
             </Tooltip>)}
+          {!isMobile && (<ExportMenu note={note} content={content} html={exportHtml} theme={exportTheme}/>)}
           {isMobile && (<Tooltip label={t("common.more_actions")} side="left">
               <IconButton ref={moreButtonRef} label={t("common.more_actions")} size="sm" onClick={() => setMoreMenuOpen(true)}>
                 <MoreHorizontal size={16}/>
@@ -257,7 +298,7 @@ export function Workspace({ mobileLayout = 'edit', onMobileBack, }: {
         {layout === 'split' && (<SplitResizer label={t("workspace.resize_editor_and_preview_panes")} containerRef={containerRef} ratio={effectiveSplitRatio} onChange={(splitRatio) => setLayout({ splitRatio })} onReset={() => setLayout({ splitRatio: null })}/>)}
 
         {showPreview && (<div className={cn('flex min-w-0 overflow-hidden border-l border-[var(--border-subtle)] bg-[var(--bg-editor)]', layout === 'preview' && 'flex-1 border-l-0')} style={{ width: layout === 'split' ? previewWidth : undefined }}>
-            <Preview key={note.id} content={content} onHeadings={setHeadings} scrollerRef={previewScrollerRef} onRendered={invalidateSyncAnchors} className="min-w-0 flex-1"/>
+            <Preview key={note.id} content={content} onHeadings={setHeadings} onHtmlReady={setPreviewHtml} scrollerRef={previewScrollerRef} onRendered={invalidateSyncAnchors} className="min-w-0 flex-1"/>
             {outlineVisible && (<Outline headings={headings} onSelect={jumpToHeading} scrollerRef={previewScrollerRef}/>)}
           </div>)}
       </div>

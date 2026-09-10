@@ -1,4 +1,5 @@
 import { Hono } from 'hono'
+import { tokenRoutes, reportRoutes } from './routes/integrations'
 import { initializeDatabase } from './db/schema'
 import { ApiError, errorResponse } from './lib/errors'
 import { loadSession, requireClientHeader } from './middleware/auth'
@@ -46,6 +47,9 @@ export function createApp() {
     await next()
   })
 
+  app.route('/api/v1', reportRoutes)
+  app.all('/api/v1/*', () => { throw ApiError.notFound('API endpoint not found') })
+
   app.use('/api/*', requireClientHeader)
   app.use('/api/*', loadSession)
 
@@ -64,6 +68,7 @@ export function createApp() {
     })
   })
 
+  app.route('/api/integrations', tokenRoutes)
   app.route('/api/auth', authRoutes)
   app.route('/api/notes', notesRoutes)
   app.route('/api/folders', foldersRoutes)

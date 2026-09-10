@@ -162,6 +162,11 @@ export const useNotes = create<NotesState>((set, get) => ({
                 const state = get();
                 const notes = state.notes;
                 const activeId = useUi.getState().activeNoteId;
+                const linkedId = new URLSearchParams(location.search).get('note');
+                if (linkedId && /^[0-9a-hjkmnp-tv-z]{26}$/.test(linkedId)) {
+                    await get().openNote(linkedId);
+                    return;
+                }
                 const targetId = (latestRequestedNoteId && notes[latestRequestedNoteId]
                     ? latestRequestedNoteId
                     : null) ??

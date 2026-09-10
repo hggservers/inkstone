@@ -12,10 +12,11 @@ import { SyncSettings } from './SyncSettings';
 import { DataSettings } from './DataSettings';
 import { AccountSettings } from './AccountSettings';
 import { AboutSettings } from './AboutSettings';
+import { IntegrationSettings } from './IntegrationSettings';
 import { useUi } from '../../store/ui';
 import { t } from "../../lib/i18n";
 const BackupSettings = lazy(() => import('./BackupSettings').then((m) => ({ default: m.BackupSettings })));
-type Section = 'appearance' | 'editor' | 'backup' | 'sync' | 'account' | 'data' | 'about';
+type Section = 'integrations' | 'appearance' | 'editor' | 'backup' | 'sync' | 'account' | 'data' | 'about';
 const SECTIONS: {
     id: Section;
     label: () => string;
@@ -27,6 +28,7 @@ const SECTIONS: {
     { id: 'sync', label: () => t("settings.sync"), icon: <RefreshCw size={14}/> },
     { id: 'account', label: () => t("settings.account"), icon: <UserRound size={14}/> },
     { id: 'data', label: () => t("settings.data"), icon: <Database size={14}/> },
+    { id: 'integrations', label: () => t('integrations.title'), icon: <Database size={14}/> },
     { id: 'about', label: () => t("settings.about"), icon: <Info size={14}/> },
 ];
 export function SettingsPanel({ onClose }: {
@@ -94,6 +96,7 @@ export function SettingsPanel({ onClose }: {
             {section === 'sync' && <SyncSettings />}
             {section === 'account' && <AccountSettings />}
             {section === 'data' && <DataSettings />}
+            {section === 'integrations' && <IntegrationSettings />}
             {section === 'about' && <AboutSettings />}
             {section === 'backup' && (<Suspense fallback={<LoadingBlock label={t("settings.loading_backup_settings")}/>}>
                 <BackupSettings />

@@ -1,5 +1,6 @@
 /** Defines the idempotent final D1 schema initialized by every Worker isolate. */
 import type { DatabaseState, Env } from '../env'
+import { INTEGRATION_SCHEMA } from './integrations'
 
 
 export const SCHEMA_STATEMENTS: readonly string[] = [
@@ -325,6 +326,7 @@ async function createSchema(db: D1Database): Promise<DatabaseState> {
     await db.batch(SCHEMA_STATEMENTS.map((statement) => db.prepare(statement)))
   }
   await assertFinalSchema(db)
+  await db.batch(INTEGRATION_SCHEMA.map((statement) => db.prepare(statement)))
 
   try {
     await db.prepare(FTS_STATEMENT).run()

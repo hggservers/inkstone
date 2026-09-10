@@ -1,5 +1,20 @@
-import type { MessageKey } from './en-US';
+import type { MessageKey } from './en-US';
 export const ZH_CN_MESSAGES = {
+    "reports.title_prefix": "搞钱情报日报｜",
+    "integrations.title": "API 接入",
+    "integrations.description": "创建仅限指定文件夹的日报读写令牌，不能删除笔记或访问其他目录。",
+    "integrations.name": "令牌名称",
+    "integrations.folder": "允许访问的文件夹",
+    "integrations.expiry": "有效天数（1–365）",
+    "integrations.create": "创建令牌",
+    "integrations.revoke": "撤销",
+    "integrations.once": "请立即复制保存，令牌仅显示这一次。",
+    "integrations.active": "有效",
+    "integrations.expired": "已到期或撤销",
+    "integrations.loading": "正在加载…",
+    "integrations.audit": "近期 API 调用",
+    "integrations.empty": "尚未创建 API 令牌。",
+
     "app.boot_label": "正在准备笔记本…",
     "app.document_title": "Inkstone",
     "app.meta_description": "运行在 Cloudflare 上的私有、自托管 Markdown 笔记本。",

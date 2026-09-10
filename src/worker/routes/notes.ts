@@ -1,4 +1,4 @@
-import { Hono } from 'hono'
+import { Hono, type Context } from 'hono'
 import { LIMITS } from '@shared/constants'
 import { countText, deriveExcerpt, deriveTitle } from '@shared/markdown-utils'
 import { sliceText, truncateText, utf8ByteLength } from '@shared/text-utils'
@@ -166,10 +166,12 @@ notesRoutes.get('/:id', async (c) => {
   return c.json(note)
 })
 
-notesRoutes.post('/', async (c) => {
+notesRoutes.post('/', (c) => createNote(c))
+
+export async function createNote(c: Context<AppBindings>, input?: CreateNoteBody) {
   const userId = c.get('userId')
   const { ftsEnabled } = c.get('database')
-  const body = await readJson<CreateNoteBody>(c, JSON_BODY_LIMITS.note)
+  const body = input ?? await readJson<CreateNoteBody>(c, JSON_BODY_LIMITS.note)
 
   if (body.content !== undefined && typeof body.content !== 'string') {
     throw ApiError.badRequest('content must be a string')
@@ -243,13 +245,15 @@ notesRoutes.post('/', async (c) => {
   await broadcastCursor(c)
 
   return c.json(toNote(created), insertResult?.meta.changes ? 201 : 200)
-})
+}
 
-notesRoutes.patch('/:id', async (c) => {
+notesRoutes.patch('/:id', (c) => patchNote(c))
+
+export async function patchNote(c: Context<AppBindings>, noteId?: string, input?: PatchNoteBody) {
   const userId = c.get('userId')
-  const id = c.req.param('id')
+  const id = noteId ?? c.req.param('id') ?? ''
   const { ftsEnabled } = c.get('database')
-  const body = await readJson<PatchNoteBody>(c, JSON_BODY_LIMITS.note)
+  const body = input ?? await readJson<PatchNoteBody>(c, JSON_BODY_LIMITS.note)
 
   const row = await c.env.DB.prepare(
     `SELECT ${NOTE_COLUMNS_FULL} FROM notes n WHERE n.id = ?1 AND n.user_id = ?2`,
@@ -414,7 +418,7 @@ notesRoutes.patch('/:id', async (c) => {
   }
   await broadcastCursor(c)
   return c.json(await loadNote(c.env.DB, userId, id))
-})
+}
 
 notesRoutes.delete('/:id', async (c) => {
   const userId = c.get('userId')

@@ -22,6 +22,8 @@ export interface DatabaseState {
 
 
 export interface Variables {
+  apiToken?: {id:string;user_id:string;folder_id:string;name:string;can_write:number;expires_at:number;revoked_at:number|null}
+
 
   database: DatabaseState
   userId: string
